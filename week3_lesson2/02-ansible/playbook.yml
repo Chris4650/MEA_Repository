@@ -1,0 +1,35 @@
+---
+- hosts: localhost
+  become: true
+
+  pre_tasks:
+    - name: Install dependencies
+      ansible.builtin.package:
+        name:
+          - yum-utils
+          - shadow-utils
+          - amazon-linux-extras
+      become: true
+
+  tasks:
+    - name: Download AWS CLI
+      ansible.builtin.get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: ./awscliv2.zip
+
+    - name: Unzip AWS CLI
+      ansible.builtin.unarchive:
+        src: ./awscliv2.zip
+        dest: .
+
+    - name: Install AWS CLI
+      ansible.builtin.command: ./aws/install --update
+
+    - name: Add Hashicorp repos
+      ansible.builtin.command: yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+      become: true
+
+    - name: Install Terraform
+      ansible.builtin.package:
+        name:
+          - terraform

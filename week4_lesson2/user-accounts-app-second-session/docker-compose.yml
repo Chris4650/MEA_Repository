@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  accounts-api-app:
+    container_name: accounts-api-app
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV}
+        - PORT=${PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - PORT=${PORT}
+  dynamodb:
+    container_name: dynamodb
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - dynamodb-data:/home/dynamodblocal
+volumes:
+  dynamodb-data:

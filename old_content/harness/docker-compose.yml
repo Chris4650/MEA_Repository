@@ -1,0 +1,116 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13
+    container_name: harness-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-harness}
+      POSTGRES_USER: ${POSTGRES_USER:-harness}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-harness123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - harness-network
+
+  # MongoDB
+  mongodb:
+    image: mongo:4.4
+    container_name: harness-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-harness}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-harness123}
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - harness-network
+
+  # Redis
+  redis:
+    image: redis:6-alpine
+    container_name: harness-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-harness123}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - harness-network
+
+  # Local Docker Registry (for storing built images)
+  registry:
+    image: registry:2
+    container_name: harness-registry
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    networks:
+      - harness-network
+
+  # Jenkins (as a CI/CD alternative for learning)
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: harness-jenkins
+    environment:
+      - JENKINS_OPTS=--httpPort=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - harness-network
+
+  # GitLab (for source code management)
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: harness-gitlab
+    environment:
+      - GITLAB_OMNIBUS_CONFIG=external_url 'http://localhost:8081'
+    ports:
+      - "8081:80"
+      - "2222:22"
+    volumes:
+      - gitlab_data:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_opt:/var/opt/gitlab
+    networks:
+      - harness-network
+
+  # SonarQube (for code quality analysis)
+  sonarqube:
+    image: sonarqube:community
+    container_name: harness-sonarqube
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - harness-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  registry_data:
+  jenkins_data:
+  gitlab_data:
+  gitlab_logs:
+  gitlab_opt:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+
+networks:
+  harness-network:
+    driver: bridge

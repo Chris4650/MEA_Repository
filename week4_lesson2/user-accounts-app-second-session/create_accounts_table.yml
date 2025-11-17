@@ -1,0 +1,42 @@
+---
+- name: Create DynamoDB Table in Docker Container
+  hosts: localhost
+  gather_facts: no
+  vars:
+    dynamodb_endpoint: "http://localhost:8000"
+    aws_access_key_id: "dummy"
+    aws_secret_access_key: "dummy"
+    table_name: "Accounts"
+    region: "us-east-1"
+
+  tasks:
+    - name: Create the Accounts DynamoDB table using AWS CLI
+      command: >
+        aws dynamodb create-table
+        --table-name {{ table_name }}
+        --attribute-definitions AttributeName=id,AttributeType=S
+        --key-schema AttributeName=id,KeyType=HASH
+        --billing-mode PROVISIONED
+        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+        --endpoint-url {{ dynamodb_endpoint }}
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+        AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+      register: dynamodb_result
+
+    - name: Show detailed result of table creation
+      debug:
+        var: dynamodb_result
+
+    - name: List tables in DynamoDB
+      command: >
+        aws dynamodb list-tables
+        --endpoint-url {{ dynamodb_endpoint }}
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+        AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+      register: list_tables_result
+
+    - name: Show list of tables
+      debug:
+        var: list_tables_result
